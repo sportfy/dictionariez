@@ -179,7 +179,7 @@ export default {
     dictWindows: [],
 
     lookup: ({ w, s, sc, sentence, languagePrompt, screen } = {}) ->
-        storage.addHistory { w, s, sc, sentence } if w and s  # ignore lookup from options page
+        storage.addHistory { w, s, sc, sentence } if w and s and w.split(/\s/).length <= 3  # ignore lookup from options page
         
         if @dictWindows.length
             result = null
@@ -286,16 +286,15 @@ export default {
             if !w 
                 w = await readClipboard(sender.tab)
 
+            result = await @lookup({ w: w?.trim(), s, sc, sentence })
+
             if newDictWindow 
                 targetWin = @create({ dictName })
                 result = await targetWin.lookup(w || @dictWindows[0].word, sentence)
 
             else if dictName # only change the main window or in new window.
                 result = await @mainDictWindow().lookup(w?.trim(), sentence, null, dictName)
-
-            else  # This is more likely to happen.
-                result = await @lookup({ w: w?.trim(), s, sc, sentence })
-
+                
             @saveInStorage()
             return result
 
@@ -325,7 +324,7 @@ export default {
                 next = await storage.getNext(w, true)
                 w = next?.w 
                 sentence = next?.sentence
-            else if w
+            else if w and w.split(/\s/).length <= 3
                 storage.addHistory { w, sentence }
 
             if request.newDictWindow
